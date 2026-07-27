@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-1.0, user-scalable=no">
+    <title>Smart Life Toolkit</title>
+    
+    <!-- Cấu hình PWA cho iOS & Android -->
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Life Toolkit">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1006/1006548.png">
+
+    <!-- Web App Manifest dạng Data URL (Không cần tạo file manifest.json riêng) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Smart Life Toolkit","short_name":"Toolkit","start_url":".","display":"standalone","background_color":"#f8fafc","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1006/1006548.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <!-- Font Awesome & Google Fonts -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding-bottom: 30px; }
+
+        /* Header Tối ưu cho Mobile App */
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        header h1 { font-size: 1.4rem; color: var(--primary); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* Navigation Tabs dạng thanh công cụ Mobile */
+        .nav-tabs {
+            display: flex;
+            justify-content: space-around;
+            gap: 8px;
+            margin: 15px auto;
+            max-width: 600px;
+            padding: 0 15px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-muted);
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .tab-btn i { font-size: 1.1rem; }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        /* Container & Cards */
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: none;
+        }
+        .tool-card.active { display: block; animation: fadeIn 0.25s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { font-size: 1.15rem; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+        /* Inputs & Buttons */
+        input, select, button { outline: none; }
+        .input-group { display: flex; gap: 8px; margin-bottom: 15px; }
+        input[type="text"], input[type="number"], select {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: #fff;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Pomodoro & Todo */
+        .pomodoro-display {
+            text-align: center;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .timer { font-size: 2.8rem; font-weight: 700; color: var(--primary); margin: 5px 0; }
+        .timer-controls { display: flex; justify-content: center; gap: 10px; }
+        .btn-timer { padding: 8px 18px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+        .btn-start { background: #10b981; color: white; }
+        .btn-reset { background: #ef4444; color: white; }
+
+        .todo-list { list-style: none; }
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .todo-item.completed span { text-decoration: line-through; color: var(--text-muted); }
+        .todo-actions { display: flex; gap: 10px; }
+        .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem; }
+        .btn-icon.delete { color: #ef4444; }
+
+        /* Converter */
+        .converter-grid { display: flex; flex-direction: column; gap: 12px; }
+
+        /* QR Generator */
+        #qrcode { display: flex; justify-content: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-toolbox"></i> Life Toolkit</h1>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('todo-tool', this)">
+            <i class="fa-solid fa-check-double"></i> Việc cần làm
+        </button>
+        <button class="tab-btn" onclick="switchTab('converter-tool', this)">
+            <i class="fa-solid fa-calculator"></i> Đổi đơn vị
+        </button>
+        <button class="tab-btn" onclick="switchTab('qr-tool', this)">
+            <i class="fa-solid fa-qrcode"></i> Tạo mã QR
+        </button>
+    </div>
+
+    <div class="container">
+        <!-- TOOL 1: TODO & POMODORO -->
+        <div id="todo-tool" class="tool-card active">
+            <h2><i class="fa-regular fa-clock"></i> Đồng hồ Pomodoro</h2>
+            <div class="pomodoro-display">
+                <div class="timer" id="timer-display">25:00</div>
+                <div class="timer-controls">
+                    <button class="btn-timer btn-start" onclick="toggleTimer()" id="timer-btn">Bắt đầu</button>
+                    <button class="btn-timer btn-reset" onclick="resetTimer()">Đặt lại</button>
+                </div>
+            </div>
+
+            <h2><i class="fa-solid fa-list-check"></i> Việc cần làm</h2>
+            <div class="input-group">
+                <input type="text" id="todo-input" placeholder="Thêm việc mới...">
+                <button class="btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <ul class="todo-list" id="todo-list"></ul>
+        </div>
+
+        <!-- TOOL 2: CONVERTER -->
+        <div id="converter-tool" class="tool-card">
+            <h2><i class="fa-solid fa-right-left"></i> Chuyển đổi đơn vị</h2>
+            <div class="input-group">
+                <select id="convert-type" onchange="updateConverterUnits()">
+                    <option value="length">Độ dài (m, km, ft, in)</option>
+                    <option value="weight">Khối lượng (kg, g, lb)</option>
+                    <option value="currency">Tỷ giá (USD, VND)</option>
+                </select>
+            </div>
+            <div class="converter-grid">
+                <div>
+                    <input type="number" id="convert-input" value="1" oninput="calculateConvert()">
+                    <select id="unit-from" onchange="calculateConvert()" style="margin-top:6px; width:100%;"></select>
+                </div>
+                <div style="text-align: center; color: var(--text-muted);"><i class="fa-solid fa-arrow-down"></i></div>
+                <div>
+                    <input type="number" id="convert-output" readonly style="background:#f1f5f9; font-weight:bold; color:var(--primary);">
+                    <select id="unit-to" onchange="calculateConvert()" style="margin-top:6px; width:100%;"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOOL 3: QR GENERATOR -->
+        <div id="qr-tool" class="tool-card">
+            <h2><i class="fa-solid fa-qrcode"></i> Tạo mã QR</h2>
+            <div class="input-group">
+                <input type="text" id="qr-input" placeholder="Nhập link hoặc văn bản...">
+                <button class="btn-primary" onclick="generateQR()">Tạo</button>
+            </div>
+            <div id="qrcode"></div>
+        </div>
+    </div>
+
+    <script>
+        // TAB SWITCHING
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tool-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // TOOL 1: POMODORO & TODO
+        let timeLeft = 25 * 60;
+        let timerInterval = null;
+        let isRunning = false;
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer-display').innerText = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timer-btn');
+            if (isRunning) {
+                clearInterval(timerInterval);
+                btn.innerText = 'Tiếp tục';
+                btn.className = 'btn-timer btn-start';
+            } else {
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        alert("Hết giờ làm việc!");
+                        resetTimer();
+                    }
+                }, 1000);
+                btn.innerText = 'Tạm dừng';
+                btn.className = 'btn-timer btn-reset';
+            }
+            isRunning = !isRunning;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 25 * 60;
+            isRunning = false;
+            updateTimerDisplay();
+            const btn = document.getElementById('timer-btn');
+            btn.innerText = 'Bắt đầu';
+            btn.className = 'btn-timer btn-start';
+        }
+
+        let todos = JSON.parse(localStorage.getItem('smart_todos')) || [];
+
+        function saveTodos() {
+            localStorage.setItem('smart_todos', JSON.stringify(todos));
+            renderTodos();
+        }
+
+        function addTodo() {
+            const input = document.getElementById('todo-input');
+            if (!input.value.trim()) return;
+            todos.push({ text: input.value.trim(), completed: false });
+            input.value = '';
+            saveTodos();
+        }
+
+        function toggleTodo(index) {
+            todos[index].completed = !todos[index].completed;
+            saveTodos();
+        }
+
+        function deleteTodo(index) {
+            todos.splice(index, 1);
+            saveTodos();
+        }
+
+        function renderTodos() {
+            const list = document.getElementById('todo-list');
+            list.innerHTML = '';
+            todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <span>${todo.text}</span>
+                    <div class="todo-actions">
+                        <button class="btn-icon" onclick="toggleTodo(${index})"><i class="fa-solid fa-check"></i></button>
+                        <button class="btn-icon delete" onclick="deleteTodo(${index})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+        renderTodos();
+
+        // TOOL 2: CONVERTER
+        const unitsData = {
+            length: {
+                units: { 'm': 'Mét (m)', 'km': 'Kilômét (km)', 'ft': 'Feet (ft)', 'in': 'Inch (in)' },
+                rates: { 'm': 1, 'km': 1000, 'ft': 0.3048, 'in': 0.0254 }
+            },
+            weight: {
+                units: { 'kg': 'Kilôgam (kg)', 'g': 'Gam (g)', 'lb': 'Pound (lb)' },
+                rates: { 'kg': 1, 'g': 0.001, 'lb': 0.453592 }
+            },
+            currency: {
+                units: { 'USD': 'Đô la Mỹ (USD)', 'VND': 'Việt Nam Đồng (VND)' },
+                rates: { 'USD': 1, 'VND': 0.000039 }
+            }
+        };
+
+        function updateConverterUnits() {
+            const type = document.getElementById('convert-type').value;
+            const fromSelect = document.getElementById('unit-from');
+            const toSelect = document.getElementById('unit-to');
+            fromSelect.innerHTML = ''; toSelect.innerHTML = '';
+
+            const units = unitsData[type].units;
+            let keys = Object.keys(units);
+            keys.forEach(k => {
+                fromSelect.add(new Option(units[k], k));
+                toSelect.add(new Option(units[k], k));
+            });
+            if(keys.length > 1) toSelect.selectedIndex = 1;
+            calculateConvert();
+        }
+
+        function calculateConvert() {
+            const type = document.getElementById('convert-type').value;
+            const val = parseFloat(document.getElementById('convert-input').value) || 0;
+            const from = document.getElementById('unit-from').value;
+            const to = document.getElementById('unit-to').value;
+            const rates = unitsData[type].rates;
+            const result = (val * rates[from]) / rates[to];
+            document.getElementById('convert-output').value = result.toLocaleString('en-US', { maximumFractionDigits: 4 });
+        }
+        updateConverterUnits();
+
+        // TOOL 3: QR GENERATOR
+        function generateQR() {
+            const input = document.getElementById('qr-input').value.trim();
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            if (!input) return alert("Vui lòng nhập nội dung!");
+            new QRCode(qrContainer, { text: input, width: 160, height: 160, colorDark: "#0f172a" });
+        }
+
+        // TỰ ĐỘNG ĐĂNG KÝ SERVICE WORKER ĐỂ CHẠY OFFLINE
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'toolkit-v1';
+                self.addEventListener('install', e => {
+                    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./'])));
+                });
+                self.addEventListener('fetch', e => {
+                    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+    </script>
+</body>
+</html>
